@@ -1,4 +1,4 @@
-#include "..\main.h"
+#include "../main.h"
 
 Ast::Ast(const Bytecode& bytecode, const bool& ignoreDebugInfo, const bool& minimizeDiffs) : bytecode(bytecode), ignoreDebugInfo(ignoreDebugInfo), minimizeDiffs(minimizeDiffs) {}
 
@@ -3416,12 +3416,13 @@ void Ast::check_valid_name(Constant* const& constant) {
 		"or", "repeat", "return", "then", "true", "until", "while"
 	};
 
-	if (!constant->string.size() || constant->string.front() < 'A') return;
+	if (!constant->string.size() || static_cast<uint8_t>(constant->string.front()) < 'A') return;
 
 	for (uint32_t i = constant->string.size(); i--;) {
-		if (constant->string[i] < '0') return;
+		const uint8_t byte = static_cast<uint8_t>(constant->string[i]);
+		if (byte < '0') return;
 
-		switch (constant->string[i]) {
+		switch (byte) {
 		case ':':
 		case ';':
 		case '<':
@@ -3451,7 +3452,7 @@ void Ast::check_valid_name(Constant* const& constant) {
 }
 
 void Ast::check_special_number(Expression* const& expression, const bool& isCdata) {
-	const uint64_t rawDouble = std::bit_cast<uint64_t>(expression->constant->number);
+	const uint64_t rawDouble = bit_cast<uint64_t>(expression->constant->number);
 	if ((rawDouble & DOUBLE_EXPONENT) != DOUBLE_SPECIAL) return assert(rawDouble != DOUBLE_NEGATIVE_ZERO || isCdata, "Number constant is negative zero", bytecode.filePath, DEBUG_INFO);
 	assert(!(rawDouble & DOUBLE_FRACTION), "Number constant is NaN", bytecode.filePath, DEBUG_INFO);
 	if (isCdata) return;
@@ -3467,7 +3468,7 @@ void Ast::check_special_number(Expression* const& expression, const bool& isCdat
 
 Ast::CONSTANT_TYPE Ast::get_constant_type(Expression* const& expression) {
 	static const auto is_valid_number_constant = [](const double& number)->bool {
-		const uint64_t rawDouble = std::bit_cast<uint64_t>(number);
+		const uint64_t rawDouble = bit_cast<uint64_t>(number);
 		return (rawDouble & DOUBLE_EXPONENT) == DOUBLE_SPECIAL ? !(rawDouble & DOUBLE_FRACTION) : rawDouble != DOUBLE_NEGATIVE_ZERO;
 	};
 
@@ -3564,7 +3565,7 @@ Ast::Expression* Ast::new_literal(const uint8_t& literal) {
 Ast::Expression* Ast::new_signed_literal(const uint16_t& signedLiteral) {
 	Expression* const expression = new_expression(AST_EXPRESSION_CONSTANT);
 	expression->constant->type = AST_CONSTANT_NUMBER;
-	expression->constant->number = std::bit_cast<int16_t>(signedLiteral);
+	expression->constant->number = bit_cast<int16_t>(signedLiteral);
 	return expression;
 }
 
@@ -3594,10 +3595,10 @@ Ast::Expression* Ast::new_number(const Function& function, const uint16_t& index
 
 	switch (function.get_number_constant(index).type) {
 	case Bytecode::BC_KNUM_INT:
-		expression->constant->number = std::bit_cast<int32_t>(function.get_number_constant(index).integer);
+		expression->constant->number = bit_cast<int32_t>(function.get_number_constant(index).integer);
 		break;
 	case Bytecode::BC_KNUM_NUM:
-		expression->constant->number = std::bit_cast<double>(function.get_number_constant(index).number);
+		expression->constant->number = bit_cast<double>(function.get_number_constant(index).number);
 		check_special_number(expression);
 		break;
 	}
@@ -3628,11 +3629,11 @@ Ast::Expression* Ast::new_table(const Function& function, const uint16_t& index)
 			break;
 		case Bytecode::BC_KTAB_INT:
 			expression->constant->type = AST_CONSTANT_NUMBER;
-			expression->constant->number = std::bit_cast<int32_t>(constant.integer);
+			expression->constant->number = bit_cast<int32_t>(constant.integer);
 			break;
 		case Bytecode::BC_KTAB_NUM:
 			expression->constant->type = AST_CONSTANT_NUMBER;
-			expression->constant->number = std::bit_cast<double>(constant.number);
+			expression->constant->number = bit_cast<double>(constant.number);
 			check_special_number(expression);
 			break;
 		case Bytecode::BC_KTAB_STR:
@@ -3722,7 +3723,7 @@ Ast::Expression* Ast::new_cdata(const Function& function, const uint16_t& index)
 	switch (function.get_constant(index).type) {
 	case Bytecode::BC_KGC_I64:
 		expression->constant->type = AST_CONSTANT_CDATA_SIGNED;
-		expression->constant->signed_integer = std::bit_cast<int64_t>(function.get_constant(index).cdata);
+		expression->constant->signed_integer = bit_cast<int64_t>(function.get_constant(index).cdata);
 		break;
 	case Bytecode::BC_KGC_U64:
 		expression->constant->type = AST_CONSTANT_CDATA_UNSIGNED;
@@ -3730,7 +3731,7 @@ Ast::Expression* Ast::new_cdata(const Function& function, const uint16_t& index)
 		break;
 	case Bytecode::BC_KGC_COMPLEX:
 		expression->constant->type = AST_CONSTANT_CDATA_IMAGINARY;
-		expression->constant->number = std::bit_cast<double>(function.get_constant(index).cdata);
+		expression->constant->number = bit_cast<double>(function.get_constant(index).cdata);
 		check_special_number(expression, true);
 		break;
 	}
