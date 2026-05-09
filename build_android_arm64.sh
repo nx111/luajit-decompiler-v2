@@ -9,3 +9,5 @@ cmake -S . -B build-android \
   -DANDROID_ABI=arm64-v8a 
 
 cmake --build build-android -- -j2
+
+"$NDK/toolchains/llvm/prebuilt/linux-x86_64/bin/llvm-strip" build-android/luajit-decompiler-v2

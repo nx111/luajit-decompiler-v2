@@ -11,3 +11,4 @@ cmake -S . -B "$BUILD_DIR" \
   -DCMAKE_BUILD_TYPE=Release
 
 cmake --build "$BUILD_DIR" -- -j"$JOBS"
+x86_64-w64-mingw32-strip "$BUILD_DIR/luajit-decompiler-v2.exe"
